@@ -1,736 +1,403 @@
-import openpyxl
-import json
-from pathlib import Path
-
-excel_file = "vartani_questions_corrected.xlsx"
-
-wb = openpyxl.load_workbook(excel_file, data_only=True)
-ws = wb.active
-
-questions = []
-
-for row in ws.iter_rows(min_row=2, values_only=True):
-
-    if not row[0]:
-        continue
-
-    question = str(row[0]).strip()
-
-    options = [
-        str(x or "").strip()
-        for x in row[1:5]
-    ]
-
-    answer = str(
-        row[5] or ""
-    ).strip().upper()
-
-    if answer in ["A", "B", "C", "D"]:
-
-        questions.append({
-            "q": question,
-            "o": options,
-            "a": ord(answer) - 65
-        })
-
-
-data = json.dumps(
-    questions,
-    ensure_ascii=False
-)
-
-
-html = """<!DOCTYPE html>
-
+```html
+<!DOCTYPE html>
 <html lang="hi">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Hindi Vartani Quiz</title>
 
-
 <style>
-
 * {
     box-sizing: border-box;
 }
 
 body {
-
-    font-family: Arial, sans-serif;
-
-    background: #f2f2f2;
-
     margin: 0;
-
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
 }
-
 
 .container {
-
     max-width: 1200px;
-
     margin: 20px auto;
-
     padding: 20px;
-
 }
-
-
-/* ==============================
-   QUIZ LAYOUT
-============================== */
 
 .quiz-layout {
-
     display: grid;
-
     grid-template-columns: 1fr 280px;
-
     gap: 20px;
-
 }
-
-
-/* ==============================
-   QUIZ
-============================== */
 
 .quiz {
-
     background: white;
-
     padding: 25px;
-
-    margin-top: 20px;
-
     border-radius: 12px;
-
-    box-shadow:
-        0 3px 15px rgba(0,0,0,0.12);
-
+    box-shadow: 0 3px 15px rgba(0,0,0,0.12);
 }
-
-
-/* ==============================
-   MAIN HEADING
-============================== */
 
 .quiz-heading {
-
-    font-size: 24px;
-
-    font-weight: bold;
-
     text-align: center;
-
-    margin-top: 5px;
-
-    margin-bottom: 25px;
-
+    font-size: 24px;
+    font-weight: bold;
     line-height: 1.4;
-
+    margin-bottom: 20px;
 }
-
 
 .quiz-heading small {
-
     display: block;
-
     font-size: 15px;
-
     font-weight: normal;
-
     margin-top: 5px;
-
-    line-height: 1.5;
-
 }
-
-
-/* ==============================
-   TOP
-============================== */
 
 .top {
-
     display: flex;
-
     justify-content: space-between;
-
     align-items: center;
-
-    margin-bottom: 20px;
-
     font-size: 18px;
-
+    margin-bottom: 20px;
 }
-
-
-/* ==============================
-   TIMER
-============================== */
 
 .timer {
-
     background: #222;
-
     color: white;
-
     padding: 8px 14px;
-
     border-radius: 8px;
-
     font-weight: bold;
-
 }
-
-
-/* ==============================
-   QUESTION
-============================== */
 
 .question {
-
     font-size: 24px;
-
     font-weight: bold;
-
-    margin: 25px 0;
-
     line-height: 1.5;
-
+    margin: 25px 0;
 }
 
-
-/* ==============================
-   OPTIONS
-============================== */
-
 .option {
-
     display: block;
-
     width: 100%;
-
     padding: 15px;
-
     margin: 10px 0;
-
     font-size: 18px;
-
     text-align: left;
-
     border: 2px solid #ddd;
-
     border-radius: 8px;
-
     background: white;
-
     cursor: pointer;
-
 }
 
 .option:hover {
-
     background: #f5f5f5;
-
 }
 
 .option.selected {
-
     background: #eeeeee;
-
     border-color: #222;
-
 }
 
-
-/* ==============================
-   BUTTONS
-============================== */
-
 .buttons {
-
     display: flex;
-
     justify-content: space-between;
-
-    margin-top: 25px;
-
     gap: 10px;
-
+    margin-top: 25px;
 }
 
 .prev,
 .next {
-
     padding: 12px 25px;
-
     font-size: 18px;
-
     border: 0;
-
     border-radius: 8px;
-
     background: #222;
-
     color: white;
-
     cursor: pointer;
-
 }
-
 
 .prev:disabled {
-
     background: #aaa;
-
     cursor: not-allowed;
-
 }
-
-
-/* ==============================
-   QUESTION PANEL
-============================== */
 
 .question-panel {
-
     background: white;
-
     padding: 18px;
-
-    margin-top: 20px;
-
     border-radius: 12px;
-
-    box-shadow:
-        0 3px 15px rgba(0,0,0,0.12);
-
-    max-height: 600px;
-
+    box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+    max-height: 650px;
     overflow-y: auto;
-
 }
-
 
 .panel-title {
-
-    font-size: 20px;
-
-    font-weight: bold;
-
-    margin-bottom: 15px;
-
     text-align: center;
-
+    font-size: 20px;
+    font-weight: bold;
     line-height: 1.4;
-
+    margin-bottom: 15px;
 }
-
 
 .panel-title small {
-
     display: block;
-
     font-size: 13px;
-
     font-weight: normal;
-
     margin-top: 5px;
-
-    line-height: 1.4;
-
 }
-
-
-/* ==============================
-   QUESTION NUMBERS
-============================== */
 
 .question-grid {
-
     display: grid;
-
-    grid-template-columns:
-        repeat(5, 1fr);
-
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
-
 }
-
 
 .q-number {
-
     padding: 9px 4px;
-
     border: 1px solid #ccc;
-
     border-radius: 6px;
-
     background: #f5f5f5;
-
     cursor: pointer;
-
     text-align: center;
-
     font-size: 14px;
-
 }
-
-
-/* ==============================
-   ANSWERED = GREEN
-============================== */
 
 .q-number.answered {
-
     background: #d9f7df;
-
     border-color: #35a853;
-
     color: #137333;
-
 }
-
-
-/* ==============================
-   UNANSWERED = RED
-============================== */
 
 .q-number.unanswered {
-
     background: #ffd6d6;
-
     border-color: #e00000;
-
     color: #b00000;
-
 }
-
-
-/* ==============================
-   CURRENT
-============================== */
 
 .q-number.current {
-
     background: #222;
-
     color: white;
-
     border-color: #222;
-
 }
-
-
-/* Current unanswered */
 
 .q-number.current.unanswered {
-
     background: #ffd6d6;
-
     color: #b00000;
-
     border-color: #e00000;
-
 }
-
-
-/* Current answered */
 
 .q-number.current.answered {
-
     background: #d9f7df;
-
     color: #137333;
-
     border-color: #35a853;
-
 }
-
-
-/* ==============================
-   RESULT
-============================== */
 
 .result {
-
     text-align: center;
-
 }
-
 
 .score {
-
     font-size: 50px;
-
     font-weight: bold;
-
     margin: 20px;
-
 }
-
 
 .restart {
-
     padding: 12px 25px;
-
     font-size: 18px;
-
     border: 0;
-
     border-radius: 8px;
-
     background: #222;
-
     color: white;
-
     cursor: pointer;
-
 }
 
+@media(max-width:700px) {
 
-/* ==============================
-   MOBILE
-============================== */
-
-@media(max-width: 700px) {
+    .container {
+        padding: 10px;
+    }
 
     .quiz-layout {
-
         grid-template-columns: 1fr;
-
     }
 
     .quiz {
-
         order: 1;
-
+        padding: 18px;
     }
 
     .question-panel {
-
         order: 2;
-
         max-height: none;
-
     }
 
     .question-grid {
-
-        grid-template-columns:
-            repeat(6, 1fr);
-
-    }
-
-    .question {
-
-        font-size: 20px;
-
-    }
-
-    .option {
-
-        font-size: 16px;
-
+        grid-template-columns: repeat(6, 1fr);
     }
 
     .quiz-heading {
-
         font-size: 20px;
-
     }
 
     .quiz-heading small {
-
         font-size: 13px;
+    }
 
+    .question {
+        font-size: 20px;
+    }
+
+    .option {
+        font-size: 16px;
     }
 
     .prev,
     .next {
-
         width: 50%;
-
     }
-
 }
-
 </style>
-
 </head>
-
 
 <body>
 
-
 <div class="container">
-
-<!-- ==============================
-     QUIZ LAYOUT
-============================== -->
 
 <div class="quiz-layout">
 
-
-<!-- ==============================
-     QUIZ
-============================== -->
-
 <div class="quiz" id="quiz">
 
-
-<!-- ==============================
-     MAIN HEADING
-============================== -->
-
 <div class="quiz-heading">
-
 वर्तनी शुद्धि
-
 <small>
 (पिछले सालों में RO/ARO की परीक्षा में पूछे गए महत्वपूर्ण प्रश्न)
 </small>
-
 </div>
 
-
-<!-- ==============================
-     QUESTION NUMBER + TIMER
-============================== -->
-
 <div class="top">
-
 <strong id="number"></strong>
 
 <span class="timer">
-
 ⏱️ <span id="timer">10</span>
-
 </span>
-
 </div>
 
-
-<!-- ==============================
-     QUESTION
-============================== -->
-
-<div
-class="question"
-id="question">
-</div>
-
+<div class="question" id="question"></div>
 
 <div id="options"></div>
 
-
-<!-- ==============================
-     BUTTONS
-============================== -->
-
 <div class="buttons">
-
-
-<button
-class="prev"
-id="prev">
-
-← Previous
-
-</button>
-
-
-<button
-class="next"
-id="next">
-
-Next →
-
-</button>
-
-
+<button class="prev" id="prev">← Previous</button>
+<button class="next" id="next">Next →</button>
 </div>
 
-
 </div>
-
-
-<!-- ==============================
-     QUESTION PANEL
-============================== -->
 
 <div class="question-panel">
 
-
 <div class="panel-title">
-
 वर्तनी शुद्धि
-
 <small>
 (पिछले सालों में RO/ARO की परीक्षा में पूछे गए महत्वपूर्ण प्रश्न)
 </small>
+</div>
+
+<div class="question-grid" id="questionGrid"></div>
 
 </div>
 
-
-<div
-class="question-grid"
-id="questionGrid">
 </div>
 
-
 </div>
-
-
-</div>
-
-
-</div>
-
 
 <script>
 
+/*
+====================================================
+QUESTIONS
+====================================================
+*/
 
-/* ==============================
-   QUESTIONS
-============================== */
+const questions = [
+    {
+        q: "निम्नलिखित में से शुद्ध वर्तनी वाला शब्द कौन-सा है?",
+        o: [
+            "लब्धप्रतिष्ठ",
+            "लब्धप्रतिष्ठा",
+            "लब्धप्रतिष्ठित",
+            "लब्धप्रतिष्ट"
+        ],
+        a: 0
+    },
 
-const questions = __QUESTIONS__;
+    {
+        q: "निम्नलिखित में से शुद्ध वर्तनी वाला शब्द कौन-सा है?",
+        o: [
+            "आवश्यक",
+            "आवष्यक",
+            "आवस्यक",
+            "आवशयक"
+        ],
+        a: 0
+    },
 
+    {
+        q: "निम्नलिखित में से शुद्ध वर्तनी वाला शब्द कौन-सा है?",
+        o: [
+            "स्वास्थ्य",
+            "स्वास्थय",
+            "स्वास्थ",
+            "स्वास्थ्थ"
+        ],
+        a: 0
+    },
 
-/* ==============================
-   VARIABLES
-============================== */
+    {
+        q: "निम्नलिखित में से शुद्ध वर्तनी वाला शब्द कौन-सा है?",
+        o: [
+            "उज्ज्वल",
+            "उज्वल",
+            "उज्जवल",
+            "उज्व्वल"
+        ],
+        a: 0
+    },
+
+    {
+        q: "निम्नलिखित में से शुद्ध वर्तनी वाला शब्द कौन-सा है?",
+        o: [
+            "अत्यधिक",
+            "अत्याधिक",
+            "अत्यधीक",
+            "अतयधिक"
+        ],
+        a: 0
+    }
+
+];
+
+/*
+====================================================
+VARIABLES
+====================================================
+*/
 
 let current = 0;
 
-
 let userAnswers =
-    new Array(questions.length)
-    .fill(null);
-
+    new Array(questions.length).fill(null);
 
 let visited =
-    new Array(questions.length)
-    .fill(false);
-
+    new Array(questions.length).fill(false);
 
 let timeLeft = 10;
 
 let timer;
 
-
-/* ==============================
-   ELEMENTS
-============================== */
+/*
+====================================================
+ELEMENTS
+====================================================
+*/
 
 const questionBox =
     document.getElementById("question");
@@ -753,672 +420,368 @@ const timerBox =
 const questionGrid =
     document.getElementById("questionGrid");
 
-
-/* ==============================
-   CREATE QUESTION PANEL
-============================== */
+/*
+====================================================
+CREATE QUESTION PANEL
+====================================================
+*/
 
 function createQuestionPanel() {
 
     questionGrid.innerHTML = "";
 
+    questions.forEach(function(item, index) {
 
-    questions.forEach(
-        function(item, index) {
+        const button =
+            document.createElement("button");
 
+        button.className = "q-number";
 
-            const button =
-                document.createElement("button");
+        button.textContent = index + 1;
 
+        button.onclick = function() {
 
-            button.className =
-                "q-number";
+            if (userAnswers[current] === null) {
+                visited[current] = true;
+            }
 
+            current = index;
 
-            button.textContent =
-                index + 1;
+            loadQuestion();
+        };
 
-
-            button.onclick =
-                function() {
-
-
-                    /*
-                       अगर current question
-                       unanswered है तो RED
-                    */
-
-                    if (
-                        userAnswers[current] === null
-                    ) {
-
-                        visited[current] = true;
-
-                    }
-
-
-                    current = index;
-
-
-                    loadQuestion();
-
-                };
-
-
-            questionGrid.appendChild(
-                button
-            );
-
-        }
-    );
-
+        questionGrid.appendChild(button);
+    });
 }
 
-
-/* ==============================
-   UPDATE PANEL
-============================== */
+/*
+====================================================
+UPDATE PANEL
+====================================================
+*/
 
 function updateQuestionPanel() {
 
     document
         .querySelectorAll(".q-number")
-        .forEach(
-            function(button, index) {
+        .forEach(function(button, index) {
 
+            button.classList.remove("current");
+            button.classList.remove("answered");
+            button.classList.remove("unanswered");
 
-                button.classList.remove(
-                    "current"
-                );
+            if (userAnswers[index] !== null) {
 
-
-                button.classList.remove(
-                    "answered"
-                );
-
-
-                button.classList.remove(
-                    "unanswered"
-                );
-
-
-                /*
-                   Answer दिया है
-                   = GREEN
-                */
-
-                if (
-                    userAnswers[index] !== null
-                ) {
-
-                    button.classList.add(
-                        "answered"
-                    );
-
-                }
-
-
-                /*
-                   Answer नहीं दिया
-                   = RED
-                */
-
-                else if (
-                    visited[index] === true
-                ) {
-
-                    button.classList.add(
-                        "unanswered"
-                    );
-
-                }
-
-
-                /*
-                   Current question
-                */
-
-                if (
-                    index === current
-                ) {
-
-                    button.classList.add(
-                        "current"
-                    );
-
-                }
+                button.classList.add("answered");
 
             }
-        );
+            else if (visited[index] === true) {
 
+                button.classList.add("unanswered");
+            }
+
+            if (index === current) {
+
+                button.classList.add("current");
+            }
+
+        });
 }
 
-
-/* ==============================
-   TIMER
-============================== */
+/*
+====================================================
+TIMER
+====================================================
+*/
 
 function startTimer() {
 
     clearInterval(timer);
 
-
     timeLeft = 10;
 
+    timerBox.textContent = timeLeft;
 
-    timerBox.textContent =
-        timeLeft;
+    timer = setInterval(function() {
 
+        timeLeft--;
 
-    timer =
-        setInterval(
-            function() {
+        timerBox.textContent = timeLeft;
 
+        if (timeLeft <= 0) {
 
-                timeLeft--;
+            clearInterval(timer);
 
+            if (userAnswers[current] === null) {
 
-                timerBox.textContent =
-                    timeLeft;
+                visited[current] = true;
+            }
 
+            updateQuestionPanel();
 
-                if (
-                    timeLeft <= 0
-                ) {
+            goNext();
+        }
 
-
-                    clearInterval(timer);
-
-
-                    /*
-                       No answer
-                       = RED
-                    */
-
-                    if (
-                        userAnswers[current]
-                        === null
-                    ) {
-
-                        visited[current] =
-                            true;
-
-                    }
-
-
-                    updateQuestionPanel();
-
-
-                    goNext();
-
-                }
-
-
-            },
-            1000
-        );
-
+    }, 1000);
 }
 
-
-/* ==============================
-   LOAD QUESTION
-============================== */
+/*
+====================================================
+LOAD QUESTION
+====================================================
+*/
 
 function loadQuestion() {
 
     clearInterval(timer);
 
-
-    const item =
-        questions[current];
-
+    const item = questions[current];
 
     numberBox.textContent =
-
         "प्रश्न " +
-
         (current + 1) +
-
         " / " +
-
         questions.length;
 
-
-    questionBox.textContent =
-        item.q;
-
+    questionBox.textContent = item.q;
 
     optionsBox.innerHTML = "";
 
+    item.o.forEach(function(option, index) {
 
-    item.o.forEach(
-        function(option, index) {
+        const button =
+            document.createElement("button");
 
+        button.className = "option";
 
-            const button =
-                document.createElement("button");
+        button.textContent =
+            String.fromCharCode(65 + index) +
+            ". " +
+            option;
 
+        if (userAnswers[current] === index) {
 
-            button.className =
-                "option";
-
-
-            button.textContent =
-
-                String.fromCharCode(
-                    65 + index
-                )
-
-                + ". "
-
-                + option;
-
-
-            /*
-               Restore selected answer
-            */
-
-            if (
-                userAnswers[current]
-                === index
-            ) {
-
-                button.classList.add(
-                    "selected"
-                );
-
-            }
-
-
-            button.onclick =
-                function() {
-
-                    selectAnswer(index);
-
-                };
-
-
-            optionsBox.appendChild(
-                button
-            );
-
+            button.classList.add("selected");
         }
-    );
 
+        button.onclick = function() {
 
-    /*
-       Previous button
-       Question 1 पर disabled
-       रहेगा लेकिन दिखाई देगा।
-    */
+            selectAnswer(index);
+        };
 
-    prevButton.disabled =
-        current === 0;
+        optionsBox.appendChild(button);
+    });
 
+    prevButton.disabled = current === 0;
 
-    /*
-       Last question
-    */
-
-    if (
-        current ===
-        questions.length - 1
-    ) {
+    if (current === questions.length - 1) {
 
         nextButton.textContent =
             "Submit Quiz ✓";
 
     }
-
     else {
 
         nextButton.textContent =
             "Next →";
-
     }
-
 
     updateQuestionPanel();
 
-
     startTimer();
-
 }
 
-
-/* ==============================
-   SELECT ANSWER
-============================== */
+/*
+====================================================
+SELECT ANSWER
+====================================================
+*/
 
 function selectAnswer(index) {
 
+    userAnswers[current] = index;
 
-    userAnswers[current] =
-        index;
-
-
-    /*
-       Answer मिल गया
-       इसलिए RED हटेगा
-    */
-
-    visited[current] =
-        false;
-
+    visited[current] = false;
 
     document
         .querySelectorAll(".option")
-        .forEach(
-            function(button, i) {
+        .forEach(function(button, i) {
 
+            button.classList.remove("selected");
 
-                button.classList.remove(
-                    "selected"
-                );
+            if (i === index) {
 
-
-                if (
-                    i === index
-                ) {
-
-                    button.classList.add(
-                        "selected"
-                    );
-
-                }
-
+                button.classList.add("selected");
             }
-        );
 
+        });
 
     updateQuestionPanel();
-
 }
 
-
-/* ==============================
-   NEXT
-============================== */
+/*
+====================================================
+NEXT
+====================================================
+*/
 
 function goNext() {
 
     clearInterval(timer);
 
+    if (userAnswers[current] === null) {
 
-    /*
-       बिना answer Next
-       = RED
-    */
-
-    if (
-        userAnswers[current] === null
-    ) {
-
-        visited[current] =
-            true;
-
+        visited[current] = true;
     }
-
 
     updateQuestionPanel();
 
-
-    if (
-        current <
-        questions.length - 1
-    ) {
+    if (current < questions.length - 1) {
 
         current++;
-
 
         loadQuestion();
 
     }
-
     else {
 
         showResult();
-
     }
-
 }
 
-
-/* ==============================
-   PREVIOUS
-============================== */
+/*
+====================================================
+PREVIOUS
+====================================================
+*/
 
 function goPrevious() {
 
     clearInterval(timer);
 
-
-    /*
-       Current question unanswered
-       है तो RED करें।
-    */
-
-    if (
-        userAnswers[current] === null
-    ) {
+    if (userAnswers[current] === null) {
 
         visited[current] = true;
-
     }
 
-
-    if (
-        current > 0
-    ) {
+    if (current > 0) {
 
         current--;
 
         loadQuestion();
-
     }
-
 }
 
+/*
+====================================================
+BUTTONS
+====================================================
+*/
 
-/* ==============================
-   NEXT BUTTON
-============================== */
+nextButton.onclick = function() {
 
-nextButton.onclick =
-    function() {
+    goNext();
+};
 
-        goNext();
+prevButton.onclick = function() {
 
-    };
+    goPrevious();
+};
 
-
-/* ==============================
-   PREVIOUS BUTTON
-============================== */
-
-prevButton.onclick =
-    function() {
-
-        goPrevious();
-
-    };
-
-
-/* ==============================
-   RESULT
-============================== */
+/*
+====================================================
+RESULT
+====================================================
+*/
 
 function showResult() {
 
     clearInterval(timer);
 
-
     let score = 0;
 
+    userAnswers.forEach(function(answer, index) {
 
-    userAnswers.forEach(
-        function(answer, index) {
+        if (
+            answer !== null &&
+            answer === questions[index].a
+        ) {
 
-
-            if (
-
-                answer !== null &&
-
-                answer ===
-                questions[index].a
-
-            ) {
-
-                score++;
-
-            }
-
+            score++;
         }
-    );
 
+    });
 
-    const total =
-        questions.length;
-
+    const total = questions.length;
 
     const answered =
-        userAnswers.filter(
-            function(answer) {
+        userAnswers.filter(function(answer) {
 
-                return answer !== null;
+            return answer !== null;
 
-            }
-        ).length;
-
+        }).length;
 
     const wrong =
         answered - score;
 
-
     const unanswered =
         total - answered;
 
-
     const accuracy =
-
         total > 0
-
-        ? Math.round(
-            (score / total) * 100
-          )
-
+        ? Math.round((score / total) * 100)
         : 0;
 
-
-    document.getElementById("quiz")
-        .innerHTML =
-
+    document.getElementById("quiz").innerHTML =
 
         '<div class="result">' +
 
-
         '<h2>🎉 Quiz पूरा हो गया!</h2>' +
 
-
         '<div class="score">' +
-
         score +
-
         ' / ' +
-
         total +
-
         '</div>' +
 
-
         '<p>✅ सही: ' +
-
         score +
-
         '</p>' +
-
 
         '<p>❌ गलत: ' +
-
         wrong +
-
         '</p>' +
-
 
         '<p>⭕ बिना उत्तर: ' +
-
         unanswered +
-
         '</p>' +
 
-
         '<p>🎯 Accuracy: ' +
-
         accuracy +
-
         '%</p>' +
 
-
         '<button class="restart" ' +
-
         'onclick="location.reload()">' +
-
 
         'फिर से Quiz दें' +
 
-
         '</button>' +
 
-
         '</div>';
-
 }
 
-
-/* ==============================
-   START
-============================== */
+/*
+====================================================
+START
+====================================================
+*/
 
 createQuestionPanel();
 
 loadQuestion();
 
-
 </script>
 
-
 </body>
-
 </html>
-"""
-
-
-html = html.replace(
-    "__QUESTIONS__",
-    data
-)
-
-
-Path("index.html").write_text(
-    html,
-    encoding="utf-8"
-)
-
-
-print()
-
-print("====================================")
-
-print("QUIZ READY!")
-
-print(
-    "Total Questions:",
-    len(questions)
-)
-
-print(
-    "index.html created successfully."
-)
-
-print("====================================")
+```
